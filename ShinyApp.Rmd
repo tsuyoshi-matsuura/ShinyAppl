@@ -1,0 +1,80 @@
+---
+title: "Shiny App for calculating annualized returns"
+date: "26/09/2019"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## What does the application do?
+
+ - The application presents a plot of the DAX and FTSE indices vs time
+ 
+ - The user can select an area of interest in the plot
+ 
+ - The application will calculate the annualized returns for the indices
+ in the selected area and report them back
+ 
+ - The application will plot fits through the data using the calculated
+ annualized returns
+ 
+ 
+## Example
+
+```{r, echo=FALSE,message=FALSE}
+
+library(dplyr)
+# Load time series data with DAX and FTSE indices
+data("EuStockMarkets")
+    
+# Transform the timeseries to a data frame
+stocks <- as.data.frame(EuStockMarkets) %>%
+    mutate(time = time(EuStockMarkets))
+    
+brushed_data <- stocks[1400:1800,]
+    
+mdlDAX <- lm(log(DAX) ~ time, data = brushed_data)
+
+mdlFTSE <- lm(log(FTSE) ~ time, data = brushed_data)
+
+
+DAX <- round((exp(mdlDAX[[1]][2])-1)*100,digits=1)
+
+
+FTSE <- round((exp(mdlFTSE[[1]][2])-1)*100,digits=1)
+```
+
+This figure shows a fit for the period 1996.877 - 1998.415 with the following annualized returns: DAX=`r DAX`% and FTSE=`r FTSE`%
+
+```{r}
+plot(stocks$time, stocks$DAX, xlab = "Year",
+    ylab = "Index", main = "DAX and FTSE indices",
+    cex=0.3, col="blue", bty = "n")
+points(stocks$time,stocks$FTSE,cex=0.3,col="red")
+legend("topleft",pch=1,col=c("blue","red"),legend=c("DAX","FTSE"),bty="n")
+lines(brushed_data$time,exp(predict(mdlDAX)),col="blue",lwd=4)
+lines(brushed_data$time,exp(predict(mdlFTSE)),col="red",lwd=4)
+
+```
+
+## Some technical stuff
+
+To determine the annualized returns of the indices, the indices are modeled
+in the following way:  
+ 
+`index = a * ( 1 + R )^t`
+ 
+where `a` is some constant, `R` the annualized return as a fraction and `t` is time in years.
+
+The annualized returns `R` were estimated by fitting `log(index)` vs `t` using a linear model.
+
+The slope of the fit equals `log(1+R)` from which `R` can be determined.
+
+## Thank you for your attention
+
+The application can be found by following this link: [https://tsuyoshi-matsuura.shinyapps.io/InteractiveGraphics](https://tsuyoshi-matsuura.shinyapps.io/InteractiveGraphics)
+
+
+I hope you enjoy playing with the application!!!!!
